@@ -24,8 +24,8 @@ function get($url,$cookie=""){
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 12);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 13);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);  //SSL 报错时使用
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);  //SSL 报错时使用
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -107,14 +107,22 @@ function getbd($phone,$result){
         $phone_t = $divs[0]->find("span.op_fraudphone_number")[0];
         $phone_t = str_replace("&nbsp;","",preg_replace("/[\s]{2,}/","",strip_tags($phone_t)));
         if(strpos($phone_t,$phone)!==false) {
-            $belong = $divs[0]->find("span.op_fraudphone_addr")[0];
-            $belong = str_replace(" ", "",str_replace("&nbsp;", "", preg_replace("/[\s]{2,}/", "", strip_tags($belong))));
-            $type_t = $divs[0]->find("span.op_fraudphone_label")[0];
-            $type_t = str_replace(" ", "",str_replace("&nbsp;", "", preg_replace("/[\s]{2,}/", "", strip_tags($type_t))));
-//        echo str_replace("&nbsp;","",preg_replace("/[\s]{2,}/","",strip_tags($phone)."(".strip_tags($belong).")".strip_tags($type_t)));
-            $type->type = $type_t;
-            if(empty($result->where)){
-                $result->where = $belong;
+            $op_fraudphone_net = $divs[0]->find("span.op_fraudphone_net");
+            if(count($op_fraudphone_net)>0){
+                $op_fraudphone_net=str_replace("&nbsp;","",preg_replace("/[\s]{2,}/","",strip_tags($op_fraudphone_net[0])));
+                $type->type = $op_fraudphone_net;
+            }else {
+                $belong = $divs[0]->find("span.op_fraudphone_addr")[0];
+                $belong = str_replace(" ", "", str_replace("&nbsp;", "", preg_replace("/[\s]{2,}/", "", strip_tags($belong))));
+                $type_t = $divs[0]->find("div.op_fraudphone_word")[0];
+                $start = strpos($type_t, "用户标记为<strong>\"") + strlen("用户标记为<strong>\"");
+                $leng = strpos($type_t, "\"</strong>", $start) - $start;
+                $type_t = substr($type_t, $start, $leng);
+                $type_t = str_replace(" ", "", str_replace("&nbsp;", "", preg_replace("/[\s]{2,}/", "", strip_tags($type_t))));
+                $type->type = $type_t;
+                if (empty($result->where)) {
+                    $result->where = $belong;
+                }
             }
         }
     }
